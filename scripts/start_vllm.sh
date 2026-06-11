@@ -18,6 +18,9 @@
 
 set -euo pipefail
 
+# Non-interactive ssh skips ~/.profile; make sure uv is reachable.
+export PATH="$HOME/.local/bin:$PATH"
+
 MODEL="${VLLM_MODEL:-Qwen/Qwen3-30B-A3B-Instruct-2507}"
 
 exec uv run python -m vllm.entrypoints.openai.api_server \

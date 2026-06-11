@@ -58,8 +58,19 @@ class AgentState:
 
 _LLM: ChatOpenAI | None = None
 
+# Per-node output-length caps (course slide 23/24: "output length caps" is a
+# decode-throughput knob — bounded decode time per request).
+# - generate: a SQL statement is ~50-150 tokens; 200 is comfortable.
+# - verify: model is told to emit one-line JSON {"ok":bool,"issue":str}; 32 is plenty.
+# - revise: same shape as generate; 200.
+MAX_TOKENS = {
+    "generate": 200,
+    "verify": 32,
+    "revise": 200,
+}
 
-def llm() -> ChatOpenAI:
+
+def llm(node: str | None = None) -> ChatOpenAI:
     """Cached chat client. One per worker process.
 
     Construction was previously per-call, which spun up a fresh httpx
@@ -70,6 +81,9 @@ def llm() -> ChatOpenAI:
     Custom httpx.AsyncClient overrides the default limits (100/20) which were
     too small at 10 RPS x 3 LLM calls: 30 concurrent requests + retries
     saturated the pool and forced queueing inside httpx.
+
+    Pass `node` to override max_tokens for that node's expected output length
+    (see MAX_TOKENS above). Default (None) uses the cached client's max_tokens=256.
     """
     global _LLM
     if _LLM is None:
@@ -89,6 +103,8 @@ def llm() -> ChatOpenAI:
             max_tokens=256,
             http_async_client=async_client,
         )
+    if node is not None and node in MAX_TOKENS:
+        return _LLM.bind(max_tokens=MAX_TOKENS[node])
     return _LLM
 
 
@@ -115,7 +131,7 @@ async def generate_sql_node(state: AgentState) -> dict:
     Async because graph.ainvoke() is used by the server; sync invoke under load
     serializes each request on the FastAPI threadpool.
     """
-    response = await llm().ainvoke([
+    response = await llm("generate").ainvoke([
         ("system", prompts.GENERATE_SQL_SYSTEM),
         ("user", prompts.GENERATE_SQL_USER.format(
             schema=state.schema,
@@ -199,7 +215,7 @@ async def verify_node(state: AgentState) -> dict:
             ],
         }
 
-    response = await llm().ainvoke([
+    response = await llm("verify").ainvoke([
         ("system", prompts.VERIFY_SYSTEM),
         ("user", prompts.VERIFY_USER.format(
             question=state.question,
@@ -218,7 +234,7 @@ async def verify_node(state: AgentState) -> dict:
 async def revise_node(state: AgentState) -> dict:
     """Produce a revised SQL query given verifier feedback."""
     execution_render = state.execution.render(max_rows=10) if state.execution else "(none)"
-    response = await llm().ainvoke([
+    response = await llm("revise").ainvoke([
         ("system", prompts.REVISE_SYSTEM),
         ("user", prompts.REVISE_USER.format(
             schema=state.schema,

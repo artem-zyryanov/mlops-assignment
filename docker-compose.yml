@@ -161,6 +161,11 @@ services:
       NEXTAUTH_SECRET: course-nextauth-not-for-prod
       LANGFUSE_INIT_ORG_NAME: Course
       LANGFUSE_INIT_PROJECT_NAME: Default
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-mlops-hw-2026
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-mlops-hw-2026-secret-deterministic-do-not-rotate
+      LANGFUSE_INIT_USER_EMAIL: artem@anna.money
+      LANGFUSE_INIT_USER_NAME: Artem
+      LANGFUSE_INIT_USER_PASSWORD: course-langfuse-admin-pw
 
 volumes:
   prometheus-data:

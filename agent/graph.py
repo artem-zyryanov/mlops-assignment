@@ -22,6 +22,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+import httpx
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 
@@ -65,15 +66,28 @@ def llm() -> ChatOpenAI:
     AsyncClient (and its connection pool) on every LLM round-trip; under load
     this churns connections and bottlenecks before vLLM. Module-level cache
     keeps the connection pool warm.
+
+    Custom httpx.AsyncClient overrides the default limits (100/20) which were
+    too small at 10 RPS x 3 LLM calls: 30 concurrent requests + retries
+    saturated the pool and forced queueing inside httpx.
     """
     global _LLM
     if _LLM is None:
+        async_client = httpx.AsyncClient(
+            limits=httpx.Limits(
+                max_connections=500,
+                max_keepalive_connections=200,
+                keepalive_expiry=30.0,
+            ),
+            timeout=httpx.Timeout(60.0),
+        )
         _LLM = ChatOpenAI(
             model=VLLM_MODEL,
             base_url=VLLM_BASE_URL,
             api_key=LLM_API_KEY,
             temperature=0.0,
             max_tokens=256,
+            http_async_client=async_client,
         )
     return _LLM
 

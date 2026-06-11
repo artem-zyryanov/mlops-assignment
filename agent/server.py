@@ -55,9 +55,17 @@ def health() -> dict[str, str]:
 @app.post("/answer", response_model=AnswerResponse)
 async def answer(req: AnswerRequest) -> AnswerResponse:
     state = AgentState(question=req.question, db_id=req.db)
+    # Pass tags BOTH as a string list (so they show up as chips in the
+    # Langfuse trace list / filterable tags) AND as metadata (preserves
+    # the full key=value mapping for queryable filtering in Phase 6).
+    # Always include db_id as a tag, even if the client doesn't pass it,
+    # so dashboard filters can slice by DB.
+    tag_kvs = {"db_id": req.db, **req.tags}
+    tags_as_strings = [f"{k}={v}" for k, v in tag_kvs.items()]
     config: dict[str, Any] = {
         "callbacks": [_lf_handler] if _lf_handler is not None else [],
-        "metadata": req.tags,
+        "metadata": tag_kvs,
+        "tags": tags_as_strings,
     }
     try:
         final = await graph.ainvoke(state, config=config)

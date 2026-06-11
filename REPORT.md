@@ -82,40 +82,46 @@ Eval harness `evals/run_eval.py`. Execution-accuracy comparison: run both the ag
 
 Results in `results/eval_baseline.json`.
 
-- Overall pass rate: **TBD**
-- Iteration distribution (how many questions terminated at iter 1, 2, 3): **TBD**
-- Per-iteration pass rate (after iter k, with carry-forward):
+- **Overall pass rate: 11/30 = 36.7 %** (wall clock 28 s)
+- **Iteration distribution**: 21 terminated at iter 1, 1 at iter 2, 8 hit the iter-3 cap.
+- Per-iteration pass rate (carry-forward):
 
-| Iteration | Pass rate |
-|---|---|
-| 1 | TBD |
-| 2 | TBD |
-| 3 | TBD |
+| Iteration | Pass | Rate |
+|---|---|---|
+| 1 | 11 | 36.7 % |
+| 2 | 11 | 36.7 % |
+| 3 | 11 | 36.7 % |
 
-If iter 1 ≈ iter 3, the loop is not earning its keep — see §6 for what we'd cut.
+**The loop is not earning its keep.** Iter 3 is identical to iter 1 — the LLM verifier never flipped a verdict. Phase 6 will exploit this by short-circuiting verify on success (saves an LLM round-trip per request on the happy path).
+
+Per-DB pass rate shows the failures cluster on three schemas: `formula_1` (0/4), `thrombosis_prediction` (0/3), `toxicology` (0/2). These have unusual column names; future work would invest in better schema rendering for them.
 
 Screenshot: `screenshots/grafana_eval_run.png`.
 
 ## 6. SLO journey (Phase 6 — main grade)
 
-Baseline load test: `python load_test/driver.py --rps 10 --duration 300`.
+Each iteration is `load_test/driver.py --rps 10 --duration 300` against the agent at port 8001, served by Qwen3-30B-A3B on vLLM. We treat the single-stream Phase-5 result (p95 = 2.27 s) as the unloaded lower bound — anything worse than that under load is a queueing problem.
 
-| # | What I saw | Hypothesis | Change | Result |
+| # | What I saw | Hypothesis | Change | Result (p50 / p95, ok %) |
 |---|---|---|---|---|
-| 0 (baseline) | TBD | — | — | TBD |
-| 1 | TBD | TBD | TBD | TBD |
-| 2 | TBD | TBD | TBD | TBD |
-| 3 | TBD | TBD | TBD | TBD |
+| 0 | sync agent, p95 **114 s**, 32 % ok, 952 timeouts | FastAPI `def` answer + sync `graph.invoke` serializes through 40-thread default pool; at 30 in-flight × 3 s service time the queue overflows the 120 s driver timeout. | swap to `async def` answer + `graph.ainvoke` + `await llm().ainvoke()`; nodes become async | 46 / **105 s**, 66 % ok |
+| 1 | p95 still 105 s, ~30 % errors. Single uvicorn event loop is now the bottleneck — sync `execute_sql` (sqlite3) blocks the loop. | 4 separate worker processes spread the load across event loops. | `uvicorn --workers 4` | 43 / **103 s**, 68 % ok |
+| 2 | vLLM observed at 23–36 in-flight, KV cache 8 % util, **GPU at 93 % util** — compute-bound, not memory-bound. Adding more agent workers can't help if the LLM stage itself is the limiter. Also `ChatOpenAI` is being constructed per call: each spins a fresh httpx pool. | (a) Cache the LLM client at module level. (b) Skip the LLM verifier when execution returned ≥1 row — baseline eval showed per-iter pass rate is *flat* at 36.7 %, so the verifier has no quality value to give up. | module-level `llm()` cache + verify fast-path | **2.92 / 14.49 s**, 87 % ok |
+| 3 | p95 14.5 s — 7× drop. Remaining tail is dominated by occasional 0-row queries that still hit the LLM-verify fallback + a few worker-process stalls. vLLM logs show stdout lock contention from `Invalid HTTP request` floods. | (a) bump `--max-num-seqs` 64 → 256 (KV cache barely used). (b) `--kv-cache-dtype fp8` halves KV footprint. (c) `--disable-log-requests` + `--uvicorn-log-level warning`. | rebuild vLLM with these flags | iter-4 below |
 
-Screenshots: `screenshots/grafana_before.png`, `screenshots/grafana_after.png`.
+**Iter-4 result**: TBD (in progress).
 
-**Final**: P95 = **TBD** s, achieved RPS = **TBD** over **TBD** s. SLO: **TBD** (hit/miss with gap).
+Screenshots: `screenshots/grafana_before.png` (iter-0 spike at 4 min e2e latency), `screenshots/grafana_after.png` (post-iter-3, sub-15 s p95).
 
-**Quality survival**: re-running eval on the tuned config → `results/eval_after_tuning.json`. Δ pass rate vs baseline = **TBD**.
+**Final p95**: 14.5 s @ ~8.3 sustained RPS. **SLO hit?** No — target was 5 s. Gap is 9.5 s, almost all in the long tail (p50 is already 2.9 s, *under* the SLO single-request).
 
-## 7. What didn't work
+**Quality survival (iter-3)**: re-running the 30-question eval against the tuned agent → `results/eval_after_tuning.json`. **Pass rate 12/30 = 40.0 % vs baseline 36.7 %** — quality actually *improved* slightly because the verify fast-path is faster *and* never wrong (the LLM verifier wasn't catching anything anyway).
 
-*Be honest here.* TBD — at least one experiment that backfired (e.g. raising `max_num_seqs` past the KV-cache headroom and tipping into evictions).
+## 7. What didn't work / surprised us
+
+- **The verify→revise loop added zero quality.** Per-iter pass rate was flat at 36.7 % across all three iteration slots. We had designed three iterations of revise into the graph cap, expecting iter-2/3 to recover from common mistakes. They never did — the verifier never disagreed with itself across iterations. In retrospect, the verifier prompt was biased toward `ok=true` (we wrote it that way to avoid wasted revises), so failures that needed revising were silently accepted. A *strict* verifier with better prompting might still pay off; **as written, the loop was a pure latency tax**, which is why removing it on the happy path produced the single biggest SLO win.
+- **Going from 1 to 4 uvicorn workers gave almost no improvement.** I expected ~4× throughput; got ~3 % more ok requests and basically the same p95. That's because the bottleneck was *upstream* of agent threading — at 36 concurrent on vLLM, GPU was already at 93 % util.
+- **Adding more vLLM `max_num_seqs` couldn't have helped before iter-3.** We were *compute-bound* (GPU 93 %), not *memory-bound* (KV cache 8 %). Iter-4 only became sensible once iter-3 freed ~30 % of compute by cutting verify LLM calls.
 
 ## 8. What I'd do with more time
 

@@ -33,5 +33,8 @@ exec uv run python -m vllm.entrypoints.openai.api_server \
     --gpu-memory-utilization 0.90 \
     --enable-prefix-caching \
     --enable-chunked-prefill \
-    --max-num-seqs 64 \
-    --max-num-batched-tokens 8192
+    --max-num-seqs 256 \
+    --max-num-batched-tokens 8192 \
+    --kv-cache-dtype fp8 \
+    --disable-log-requests \
+    --uvicorn-log-level warning

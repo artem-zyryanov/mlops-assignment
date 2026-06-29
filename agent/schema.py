@@ -52,8 +52,15 @@ def render_schema(db_id: str) -> str:
                 col_lines.append(line)
             for fk in conn.execute(f"PRAGMA foreign_key_list({_q(t)})"):
                 # (id, seq, ref_table, from, to, on_update, on_delete, match)
+                # SQLite returns NULL for `to` when the FK references the
+                # referenced table's implicit ROWID/PK without naming a column.
+                # Several BIRD DBs have these (european_football_2,
+                # debit_card_specializing, etc.) — without the guard,
+                # render_schema crashes mid-render and the agent server
+                # returns 500. This was the dominant load-test error class.
+                ref_to = fk[4] if fk[4] is not None else "rowid"
                 col_lines.append(
-                    f"  FOREIGN KEY ({_q(fk[3])}) REFERENCES {_q(fk[2])}({_q(fk[4])})"
+                    f"  FOREIGN KEY ({_q(fk[3])}) REFERENCES {_q(fk[2])}({_q(ref_to)})"
                 )
             parts.append(",\n".join(col_lines))
             parts.append(");")

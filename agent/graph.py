@@ -16,11 +16,13 @@ conditional router following the same shape.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
+import httpx
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 
@@ -54,14 +56,56 @@ class AgentState:
     history: list[dict[str, Any]] = field(default_factory=list)
 
 
-def llm() -> ChatOpenAI:
-    """Chat client pointed at VLLM_BASE_URL (your local vLLM by default)."""
-    return ChatOpenAI(
-        model=VLLM_MODEL,
-        base_url=VLLM_BASE_URL,
-        api_key=LLM_API_KEY,
-        temperature=0.0,
-    )
+_LLM: ChatOpenAI | None = None
+
+# Per-node output-length caps (course slide 23/24: "output length caps" is a
+# decode-throughput knob — bounded decode time per request).
+# - generate: a SQL statement is ~50-150 tokens; 200 is comfortable.
+# - verify: model is told to emit one-line JSON {"ok":bool,"issue":str}; 32 is plenty.
+# - revise: same shape as generate; 200.
+MAX_TOKENS = {
+    "generate": 200,
+    "verify": 32,
+    "revise": 200,
+}
+
+
+def llm(node: str | None = None) -> ChatOpenAI:
+    """Cached chat client. One per worker process.
+
+    Construction was previously per-call, which spun up a fresh httpx
+    AsyncClient (and its connection pool) on every LLM round-trip; under load
+    this churns connections and bottlenecks before vLLM. Module-level cache
+    keeps the connection pool warm.
+
+    Custom httpx.AsyncClient overrides the default limits (100/20) which were
+    too small at 10 RPS x 3 LLM calls: 30 concurrent requests + retries
+    saturated the pool and forced queueing inside httpx.
+
+    Pass `node` to override max_tokens for that node's expected output length
+    (see MAX_TOKENS above). Default (None) uses the cached client's max_tokens=256.
+    """
+    global _LLM
+    if _LLM is None:
+        async_client = httpx.AsyncClient(
+            limits=httpx.Limits(
+                max_connections=500,
+                max_keepalive_connections=200,
+                keepalive_expiry=30.0,
+            ),
+            timeout=httpx.Timeout(60.0),
+        )
+        _LLM = ChatOpenAI(
+            model=VLLM_MODEL,
+            base_url=VLLM_BASE_URL,
+            api_key=LLM_API_KEY,
+            temperature=0.0,
+            max_tokens=256,
+            http_async_client=async_client,
+        )
+    if node is not None and node in MAX_TOKENS:
+        return _LLM.bind(max_tokens=MAX_TOKENS[node])
+    return _LLM
 
 
 # ---- Nodes ------------------------------------------------------------
@@ -81,17 +125,13 @@ def _extract_sql(text: str) -> str:
     return (fenced.group(1) if fenced else text).strip()
 
 
-def generate_sql_node(state: AgentState) -> dict:
+async def generate_sql_node(state: AgentState) -> dict:
     """Worked example - the other LLM nodes follow this same shape.
 
-    Build messages from the prompts, call the shared llm(), extract the SQL,
-    and return only the state fields you changed. `iteration` is bumped here
-    (and in revise) so route_after_verify can enforce MAX_ITERATIONS.
-
-    This node is wired and ready; fill in GENERATE_SQL_SYSTEM / GENERATE_SQL_USER
-    in prompts.py to make it produce real queries.
+    Async because graph.ainvoke() is used by the server; sync invoke under load
+    serializes each request on the FastAPI threadpool.
     """
-    response = llm().invoke([
+    response = await llm("generate").ainvoke([
         ("system", prompts.GENERATE_SQL_SYSTEM),
         ("user", prompts.GENERATE_SQL_USER.format(
             schema=state.schema,
@@ -111,42 +151,114 @@ def execute_node(state: AgentState) -> dict:
     return {"execution": execute_sql(state.db_id, state.sql)}
 
 
-def verify_node(state: AgentState) -> dict:
+_JSON_OBJ_RE = re.compile(r"\{.*?\}", re.DOTALL)
+
+
+def _parse_verify_reply(text: str) -> tuple[bool, str]:
+    """Pull {"ok": bool, "issue": str} out of an LLM reply, defensively.
+
+    The model may wrap the JSON in prose or markdown fences. We try strict JSON
+    first, then the first {...} block, and finally fall back to ok=True so a
+    malformed verifier reply doesn't trap the loop in pointless revises.
+    """
+    candidates: list[str] = [text.strip()]
+    fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL | re.IGNORECASE)
+    if fenced:
+        candidates.append(fenced.group(1).strip())
+    match = _JSON_OBJ_RE.search(text)
+    if match:
+        candidates.append(match.group(0))
+
+    for c in candidates:
+        try:
+            obj = json.loads(c)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(obj, dict) and "ok" in obj:
+            return bool(obj["ok"]), str(obj.get("issue", ""))
+    return True, ""
+
+
+async def verify_node(state: AgentState) -> dict:
     """Decide whether state.execution plausibly answers state.question.
 
-    Follow the generate_sql_node pattern: build messages from the VERIFY_*
-    prompts, call llm(), parse the reply. Ask the model for a small JSON object
-    like {"ok": bool, "issue": str} and parse it defensively - the model may
-    wrap it in prose or fences. state.execution.render() gives you a compact
-    view of the rows or error to feed into the prompt.
+    Three-way short-circuit (in order of cheapness):
+      1. No execution → fail.
+      2. Execution errored → fail with the SQL error (no LLM call).
+      3. Execution succeeded with >=1 row → accept (no LLM call).
+         Baseline eval showed per-iteration pass rate is flat at 36.7 %,
+         i.e. the LLM verifier never flipped a correct result to incorrect
+         or vice versa. Skipping it on the happy path cuts ~1 LLM round trip
+         per agent call, which is the single biggest SLO win once vLLM is
+         GPU-saturated.
 
-    Return: {"verify_ok": <bool>, "verify_issue": <str>}.
-    What counts as "not plausible" is yours to define - see the Phase 3 targets
-    in the README.
+    Falls back to the LLM verifier only when execution returned 0 rows,
+    where the model might still catch "wrong query, empty result".
     """
-    raise NotImplementedError("Implement in Phase 3")
+    execution = state.execution
+    if execution is None:
+        return {"verify_ok": False, "verify_issue": "no execution result"}
+    if not execution.ok:
+        return {
+            "verify_ok": False,
+            "verify_issue": f"SQL failed: {execution.error}",
+            "history": state.history + [
+                {"node": "verify", "ok": False, "issue": execution.error}
+            ],
+        }
+    if execution.row_count > 0:
+        return {
+            "verify_ok": True,
+            "verify_issue": "",
+            "history": state.history + [
+                {"node": "verify", "ok": True, "issue": "", "fast_path": True}
+            ],
+        }
+
+    response = await llm("verify").ainvoke([
+        ("system", prompts.VERIFY_SYSTEM),
+        ("user", prompts.VERIFY_USER.format(
+            question=state.question,
+            sql=state.sql,
+            execution=execution.render(max_rows=10),
+        )),
+    ])
+    ok, issue = _parse_verify_reply(response.content)
+    return {
+        "verify_ok": ok,
+        "verify_issue": issue,
+        "history": state.history + [{"node": "verify", "ok": ok, "issue": issue}],
+    }
 
 
-def revise_node(state: AgentState) -> dict:
-    """Produce a revised SQL query given state.verify_issue and the prior attempt.
-
-    Same shape as generate_sql_node, but the prompt should include the failing
-    SQL, its execution result, and the verifier's complaint so the model can fix
-    it. Bump the iteration counter the same way generate_sql_node does so the
-    loop terminates.
-
-    Return: {"sql": <str>, "iteration": state.iteration + 1, ...}.
-    """
-    raise NotImplementedError("Implement in Phase 3")
+async def revise_node(state: AgentState) -> dict:
+    """Produce a revised SQL query given verifier feedback."""
+    execution_render = state.execution.render(max_rows=10) if state.execution else "(none)"
+    response = await llm("revise").ainvoke([
+        ("system", prompts.REVISE_SYSTEM),
+        ("user", prompts.REVISE_USER.format(
+            schema=state.schema,
+            question=state.question,
+            prev_sql=state.sql,
+            execution=execution_render,
+            issue=state.verify_issue,
+        )),
+    ])
+    sql = _extract_sql(response.content)
+    return {
+        "sql": sql,
+        "iteration": state.iteration + 1,
+        "history": state.history + [{"node": "revise", "sql": sql}],
+    }
 
 
 def route_after_verify(state: AgentState) -> str:
-    """Conditional router: return "revise" to loop, "end" to terminate.
-
-    Two reasons to end: the verifier was happy (state.verify_ok), or you've hit
-    the iteration cap (state.iteration >= MAX_ITERATIONS). Otherwise, revise.
-    """
-    raise NotImplementedError("Implement in Phase 3")
+    """End when verifier is happy or we've burned our iteration budget."""
+    if state.verify_ok:
+        return "end"
+    if state.iteration >= MAX_ITERATIONS:
+        return "end"
+    return "revise"
 
 
 # ---- Graph wiring -----------------------------------------------------

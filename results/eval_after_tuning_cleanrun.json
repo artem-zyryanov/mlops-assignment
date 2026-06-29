@@ -1,0 +1,775 @@
+{
+  "summary": {
+    "total": 30,
+    "passed": 11,
+    "pass_rate": 0.36666666666666664,
+    "iteration_distribution": {
+      "1": 25,
+      "2": 1,
+      "3": 4
+    },
+    "per_iteration_pass_rate": [
+      {
+        "iteration": 1,
+        "passed": 11,
+        "pass_rate": 0.36666666666666664
+      },
+      {
+        "iteration": 2,
+        "passed": 11,
+        "pass_rate": 0.36666666666666664
+      },
+      {
+        "iteration": 3,
+        "passed": 11,
+        "pass_rate": 0.36666666666666664
+      }
+    ],
+    "latency_p50_seconds": 0.4991647990000274,
+    "latency_p95_seconds": 1.7911965400001009,
+    "latency_max_seconds": 2.599330327999951,
+    "per_db_pass_rate": [
+      {
+        "db_id": "california_schools",
+        "total": 3,
+        "passed": 1,
+        "pass_rate": 0.3333333333333333
+      },
+      {
+        "db_id": "card_games",
+        "total": 3,
+        "passed": 1,
+        "pass_rate": 0.3333333333333333
+      },
+      {
+        "db_id": "codebase_community",
+        "total": 5,
+        "passed": 2,
+        "pass_rate": 0.4
+      },
+      {
+        "db_id": "financial",
+        "total": 3,
+        "passed": 2,
+        "pass_rate": 0.6666666666666666
+      },
+      {
+        "db_id": "formula_1",
+        "total": 4,
+        "passed": 0,
+        "pass_rate": 0.0
+      },
+      {
+        "db_id": "student_club",
+        "total": 4,
+        "passed": 3,
+        "pass_rate": 0.75
+      },
+      {
+        "db_id": "superhero",
+        "total": 3,
+        "passed": 2,
+        "pass_rate": 0.6666666666666666
+      },
+      {
+        "db_id": "thrombosis_prediction",
+        "total": 3,
+        "passed": 0,
+        "pass_rate": 0.0
+      },
+      {
+        "db_id": "toxicology",
+        "total": 2,
+        "passed": 0,
+        "pass_rate": 0.0
+      }
+    ]
+  },
+  "wall_clock_seconds": 21.13670801100011,
+  "results": [
+    {
+      "question": "What is the coordinates location of the circuits for Australian grand prix?",
+      "db_id": "formula_1",
+      "gold_sql": "SELECT DISTINCT T1.lat, T1.lng FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitID = T1.circuitId WHERE T2.name = 'Australian Grand Prix'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT lat, lng\nFROM circuits\nJOIN races ON circuits.circuitId = races.circuitId\nWHERE races.name = 'Australian Grand Prix';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 2.599330327999951,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT lat, lng\nFROM circuits\nJOIN races ON circuits.circuitId = races.circuitId\nWHERE races.name = 'Australian Grand Prix';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "List down Ajax's superpowers.",
+      "db_id": "superhero",
+      "gold_sql": "SELECT T3.power_name FROM superhero AS T1 INNER JOIN hero_power AS T2 ON T1.id = T2.hero_id INNER JOIN superpower AS T3 ON T2.power_id = T3.id WHERE T1.superhero_name = 'Ajax'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT sp.power_name\nFROM superhero s\nJOIN hero_power hp ON s.id = hp.hero_id\nJOIN superpower sp ON hp.power_id = sp.id\nWHERE s.superhero_name = 'Ajax';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.7798678529998142,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT sp.power_name\nFROM superhero s\nJOIN hero_power hp ON s.id = hp.hero_id\nJOIN superpower sp ON hp.power_id = sp.id\nWHERE s.superhero_name = 'Ajax';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "List the top five schools, by descending order, from the highest to the lowest, the most number of Enrollment (Ages 5-17). Please give their NCES school identification number.",
+      "db_id": "california_schools",
+      "gold_sql": "SELECT T1.NCESSchool FROM schools AS T1 INNER JOIN frpm AS T2 ON T1.CDSCode = T2.CDSCode ORDER BY T2.`Enrollment (Ages 5-17)` DESC LIMIT 5",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT s.\"NCESSchool\", f.\"Enrollment (Ages 5-17)\"\nFROM \"schools\" s\nJOIN \"frpm\" f ON s.\"CDSCode\" = f.\"CDSCode\"\nORDER BY f.\"Enrollment (Ages 5-17)\" DESC\nLIMIT 5;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.7378906260000804,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT s.\"NCESSchool\", f.\"Enrollment (Ages 5-17)\"\nFROM \"schools\" s\nJOIN \"frpm\" f ON s.\"CDSCode\" = f.\"CDSCode\"\nORDER BY f.\"Enrollment (Ages 5-17)\" DESC\nLIMIT 5;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "db_id": "financial",
+      "gold_sql": "SELECT AVG(T1.A15) FROM district AS T1 INNER JOIN account AS T2 ON T1.district_id = T2.district_id WHERE STRFTIME('%Y', T2.date) >= '1997' AND T1.A15 > 4000",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT AVG(d.A14) AS average_crimes\nFROM district d\nWHERE d.A14 > 4000\n  AND EXISTS (\n    SELECT 1\n    FROM account a\n    WHERE a.district_id = d.district_id\n      AND strftime('%Y', a.date) >= '1997'\n  );",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.545537935999846,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT AVG(d.A14) AS average_crimes\nFROM district d\nWHERE d.A14 > 4000\n  AND EXISTS (\n    SELECT 1\n    FROM account a\n    WHERE a.district_id = d.district_id\n      AND strftime('%Y', a.date) >= '1997'\n  );",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "How many male clients in 'Hl.m. Praha' district?",
+      "db_id": "financial",
+      "gold_sql": "SELECT COUNT(T1.client_id) FROM client AS T1 INNER JOIN district AS T2 ON T1.district_id = T2.district_id WHERE T1.gender = 'M' AND T2.A2 = 'Hl.m. Praha'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT COUNT(*) \nFROM client c\nJOIN district d ON c.district_id = d.district_id\nWHERE c.gender = 'M' AND d.A2 = 'Hl.m. Praha';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.2946322949999285,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT COUNT(*) \nFROM client c\nJOIN district d ON c.district_id = d.district_id\nWHERE c.gender = 'M' AND d.A2 = 'Hl.m. Praha';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "What is the average fastest lap time in seconds for Lewis Hamilton in all the Formula_1 races?",
+      "db_id": "formula_1",
+      "gold_sql": "SELECT AVG(CAST(SUBSTR(T2.fastestLapTime, 1, INSTR(T2.fastestLapTime, ':') - 1) AS INTEGER) * 60 + CAST(SUBSTR(T2.fastestLapTime, INSTR(T2.fastestLapTime, ':') + 1) AS REAL)) FROM drivers AS T1 INNER JOIN results AS T2 ON T1.driverId = T2.driverId WHERE T1.surname = 'Hamilton' AND T1.forename = 'Lewis'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT AVG(CAST(REPLACE(SUBSTR(r.fastestLapTime, 1, 8), ':', '') AS REAL)) AS average_fastest_lap_time_seconds\nFROM results r\nJOIN drivers d ON r.driverId = d.driverId\nWHERE d.forename = 'Lewis' AND d.surname = 'Hamilton' AND r.fastestLapTime IS NOT NULL;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.5278809489998366,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT AVG(CAST(REPLACE(SUBSTR(r.fastestLapTime, 1, 8), ':', '') AS REAL)) AS average_fastest_lap_time_seconds\nFROM results r\nJOIN drivers d ON r.driverId = d.driverId\nWHERE d.forename = 'Lewis' AND d.surname = 'Hamilton' AND r.fastestLapTime IS NOT NULL;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "From race no. 50 to 100, how many finishers have been disqualified?",
+      "db_id": "formula_1",
+      "gold_sql": "SELECT SUM(IIF(time IS NOT NULL, 1, 0)) FROM results WHERE statusId = 2 AND raceID < 100 AND raceId > 50",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT COUNT(*) \nFROM results \nWHERE raceId BETWEEN 50 AND 100 \n  AND statusId IN (\n    SELECT statusId \n    FROM status \n    WHERE status = 'Disqualified'\n  );",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.6048049070000161,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT COUNT(*) \nFROM results \nWHERE raceId BETWEEN 50 AND 100 \n  AND statusId IN (\n    SELECT statusId \n    FROM status \n    WHERE status = 'Disqualified'\n  );",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "Calculate the difference of the total amount spent in all events by the Student_Club in year 2019 and 2020.",
+      "db_id": "student_club",
+      "gold_sql": "SELECT SUM(CASE WHEN SUBSTR(T1.event_date, 1, 4) = '2019' THEN T2.spent ELSE 0 END) - SUM(CASE WHEN SUBSTR(T1.event_date, 1, 4) = '2020' THEN T2.spent ELSE 0 END) AS num FROM event AS T1 INNER JOIN budget AS T2 ON T1.event_id = T2.link_to_event",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT \n  (SELECT SUM(b.spent) FROM budget b JOIN event e ON b.link_to_event = e.event_id WHERE e.event_date LIKE '2019-%') -\n  (SELECT SUM(b.spent) FROM budget b JOIN event e ON b.link_to_event = e.event_id WHERE e.event_date LIKE '2020-%') AS difference;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.7330811500000891,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT \n  (SELECT SUM(b.spent) FROM budget b JOIN event e ON b.link_to_event = e.event_id WHERE e.event_date LIKE '2019-%') -\n  (SELECT SUM(b.spent) FROM budget b JOIN event e ON b.link_to_event = e.event_id WHERE e.event_date LIKE '2020-%') AS difference;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+      "db_id": "california_schools",
+      "gold_sql": "SELECT T2.Street, T2.City, T2.State, T2.Zip FROM satscores AS T1 INNER JOIN schools AS T2 ON T1.cds = T2.CDSCode ORDER BY CAST(T1.NumGE1500 AS REAL) / T1.NumTstTakr ASC LIMIT 1",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT s.\"Street\", s.\"City\", s.\"Zip\", s.\"State\"\nFROM \"schools\" s\nJOIN \"satscores\" ss ON s.\"CDSCode\" = ss.\"cds\"\nORDER BY (ss.\"NumGE1500\" * 1.0 / ss.\"enroll12\") ASC\nLIMIT 1;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.4991647990000274,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT s.\"Street\", s.\"City\", s.\"Zip\", s.\"State\"\nFROM \"schools\" s\nJOIN \"satscores\" ss ON s.\"CDSCode\" = ss.\"cds\"\nORDER BY (ss.\"NumGE1500\" * 1.0 / ss.\"enroll12\") ASC\nLIMIT 1;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "Calculate the percentage of carcinogenic molecules which contain the Chlorine element.",
+      "db_id": "toxicology",
+      "gold_sql": "SELECT COUNT(CASE WHEN T2.label = '+' AND T1.element = 'cl' THEN T2.molecule_id ELSE NULL END) * 100 / COUNT(T2.molecule_id) FROM atom AS T1 INNER JOIN molecule AS T2 ON T1.molecule_id = T2.molecule_id",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT \n  (COUNT(CASE WHEN m.label = 'carcinogenic' AND a.element = 'Cl' THEN 1 END) * 100.0 / \n   COUNT(CASE WHEN m.label = 'carcinogenic' THEN 1 END)) AS percentage\nFROM molecule m\nJOIN atom a ON m.molecule_id = a.molecule_id\nWHERE m.label = 'carcinogenic';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.8752765599999748,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT \n  (COUNT(CASE WHEN m.label = 'carcinogenic' AND a.element = 'Cl' THEN 1 END) * 100.0 / \n   COUNT(CASE WHEN m.label = 'carcinogenic' THEN 1 END)) AS percentage\nFROM molecule m\nJOIN atom a ON m.molecule_id = a.molecule_id\nWHERE m.label = 'carcinogenic';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "How many users received commentator badges in 2014?",
+      "db_id": "codebase_community",
+      "gold_sql": "SELECT COUNT(Id) FROM badges WHERE Name = 'Commentator' AND STRFTIME('%Y', Date) = '2014'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT COUNT(DISTINCT \"UserId\") \nFROM \"badges\" \nWHERE \"Name\" = 'Commentator' \n  AND strftime('%Y', \"Date\") = '2014';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.3696769969999423,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT COUNT(DISTINCT \"UserId\") \nFROM \"badges\" \nWHERE \"Name\" = 'Commentator' \n  AND strftime('%Y', \"Date\") = '2014';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "Among the patients with a normal Ig G level, how many of them have symptoms?",
+      "db_id": "thrombosis_prediction",
+      "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID INNER JOIN Examination AS T3 ON T3.ID = T2.ID WHERE T2.IGG BETWEEN 900 AND 2000 AND T3.Symptoms IS NOT NULL",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT COUNT(*) \nFROM \"Examination\" e\nJOIN \"Patient\" p ON e.\"ID\" = p.\"ID\"\nWHERE e.\"aCL IgG\" <= 100 \n  AND e.\"Symptoms\" IS NOT NULL \n  AND e.\"Symptoms\" != '';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.4695497539998996,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT COUNT(*) \nFROM \"Examination\" e\nJOIN \"Patient\" p ON e.\"ID\" = p.\"ID\"\nWHERE e.\"aCL IgG\" <= 100 \n  AND e.\"Symptoms\" IS NOT NULL \n  AND e.\"Symptoms\" != '';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "How many superheroes have the super power of \"Super Strength\"?",
+      "db_id": "superhero",
+      "gold_sql": "SELECT COUNT(T1.hero_id) FROM hero_power AS T1 INNER JOIN superpower AS T2 ON T1.power_id = T2.id WHERE T2.power_name = 'Super Strength'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT COUNT(*) \nFROM \"superhero\" s\nJOIN \"hero_power\" hp ON s.\"id\" = hp.\"hero_id\"\nJOIN \"superpower\" p ON hp.\"power_id\" = p.\"id\"\nWHERE p.\"power_name\" = 'Super Strength';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.4061966310000571,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT COUNT(*) \nFROM \"superhero\" s\nJOIN \"hero_power\" hp ON s.\"id\" = hp.\"hero_id\"\nJOIN \"superpower\" p ON hp.\"power_id\" = p.\"id\"\nWHERE p.\"power_name\" = 'Super Strength';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "Please list the name of the cards in the set Coldsnap with the highest converted mana cost.",
+      "db_id": "card_games",
+      "gold_sql": "SELECT T1.name FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T2.name = 'Coldsnap' ORDER BY T1.convertedManaCost DESC LIMIT 1",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT c.\"name\"\nFROM \"cards\" c\nJOIN \"sets\" s ON c.\"setCode\" = s.\"code\"\nWHERE s.\"name\" = 'Coldsnap'\nORDER BY c.\"convertedManaCost\" DESC\nLIMIT 1;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.45837608900001214,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT c.\"name\"\nFROM \"cards\" c\nJOIN \"sets\" s ON c.\"setCode\" = s.\"code\"\nWHERE s.\"name\" = 'Coldsnap'\nORDER BY c.\"convertedManaCost\" DESC\nLIMIT 1;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "For all patients with normal uric acid (UA), what is the average UA index based on their latest laboratory examination result?",
+      "db_id": "thrombosis_prediction",
+      "gold_sql": "SELECT AVG(T2.UA) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE (T2.UA < 6.5 AND T1.SEX = 'F') OR (T2.UA < 8.0 AND T1.SEX = 'M') AND T2.Date = ( SELECT MAX(Date) FROM Laboratory )",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT AVG(l.\"UA\") AS \"Average UA\"\nFROM \"Laboratory\" l\nJOIN \"Patient\" p ON l.\"ID\" = p.\"ID\"\nWHERE l.\"UA\" BETWEEN 3.0 AND 7.0\n  AND l.\"Date\" = (\n    SELECT MAX(l2.\"Date\")\n    FROM \"Laboratory\" l2\n    WHERE l2.\"ID\" = l.\"ID\"\n  );",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.5991934369999399,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT AVG(l.\"UA\") AS \"Average UA\"\nFROM \"Laboratory\" l\nJOIN \"Patient\" p ON l.\"ID\" = p.\"ID\"\nWHERE l.\"UA\" BETWEEN 3.0 AND 7.0\n  AND l.\"Date\" = (\n    SELECT MAX(l2.\"Date\")\n    FROM \"Laboratory\" l2\n    WHERE l2.\"ID\" = l.\"ID\"\n  );",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "User No.23853 gave a comment to a post at 9:08:18 on 2013/7/12, was that post well-finished?",
+      "db_id": "codebase_community",
+      "gold_sql": "SELECT IIF(T2.ClosedDate IS NULL, 'NOT well-finished', 'well-finished') AS resylt FROM comments AS T1 INNER JOIN posts AS T2 ON T1.PostId = T2.Id WHERE T1.UserId = 23853 AND T1.CreationDate = '2013-07-12 09:08:18.0'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT p.PostTypeId, p.Score, p.ViewCount, p.AnswerCount, p.CommentCount, p.FavoriteCount\nFROM posts p\nJOIN comments c ON p.Id = c.PostId\nWHERE c.UserId = 23853\n  AND c.CreationDate LIKE '2013-07-12 09:08:18%';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 2,
+      "latency_seconds": 1.0159793929999523,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT p.PostTypeId, p.Score, p.ViewCount, p.AnswerCount, p.CommentCount, p.FavoriteCount\nFROM posts p\nJOIN comments c ON p.Id = c.PostId\nWHERE c.UserId = 23853\n  AND c.CreationDate = '2013-07-12 09:08:18';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT p.PostTypeId, p.Score, p.ViewCount, p.AnswerCount, p.CommentCount, p.FavoriteCount\nFROM posts p\nJOIN comments c ON p.Id = c.PostId\nWHERE c.UserId = 23853\n  AND c.CreationDate LIKE '2013-07-12 09:08:18%';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "How many members of Business have the Medium size of tee shirt?",
+      "db_id": "student_club",
+      "gold_sql": "SELECT COUNT(T2.member_id) FROM major AS T1 INNER JOIN member AS T2 ON T1.major_id = T2.link_to_major WHERE T1.major_name = 'Business' AND T2.t_shirt_size = 'Medium'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT COUNT(*) \nFROM \"member\" m\nJOIN \"major\" maj ON m.\"link_to_major\" = maj.\"major_id\"\nWHERE maj.\"major_name\" = 'Business' \n  AND m.\"t_shirt_size\" = 'Medium';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.37139796300016314,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT COUNT(*) \nFROM \"member\" m\nJOIN \"major\" maj ON m.\"link_to_major\" = maj.\"major_id\"\nWHERE maj.\"major_name\" = 'Business' \n  AND m.\"t_shirt_size\" = 'Medium';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "What is the type of the card \"Ancestor's Chosen\" as originally printed?",
+      "db_id": "card_games",
+      "gold_sql": "SELECT originalType FROM cards WHERE name = 'Ancestor''s Chosen' AND originalType IS NOT NULL",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT \"originalType\" \nFROM \"cards\" \nWHERE \"name\" = \"Ancestor's Chosen\";",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.21014407699999538,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT \"originalType\" \nFROM \"cards\" \nWHERE \"name\" = \"Ancestor's Chosen\";",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "Which active district has the highest average score in Reading?",
+      "db_id": "california_schools",
+      "gold_sql": "SELECT T1.District FROM schools AS T1 INNER JOIN satscores AS T2 ON T1.CDSCode = T2.cds WHERE T1.StatusType = 'Active' ORDER BY T2.AvgScrRead DESC LIMIT 1",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT s.\"District\"\nFROM \"schools\" s\nJOIN \"satscores\" ss ON s.\"CDSCode\" = ss.\"cds\"\nWHERE s.\"StatusType\" = 'Active'\nORDER BY ss.\"AvgScrRead\" DESC\nLIMIT 1;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.39551349499993194,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT s.\"District\"\nFROM \"schools\" s\nJOIN \"satscores\" ss ON s.\"CDSCode\" = ss.\"cds\"\nWHERE s.\"StatusType\" = 'Active'\nORDER BY ss.\"AvgScrRead\" DESC\nLIMIT 1;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "Please provide the IDs of the 3 female clients with the largest loans.",
+      "db_id": "financial",
+      "gold_sql": "SELECT T1.client_id FROM client AS T1 INNER JOIN disp AS T4 on T1.client_id= T4.client_id INNER JOIN account AS T2 ON T4.account_id = T2.account_id  INNER JOIN loan AS T3 ON T2.account_id = T3.account_id and T4.account_id = T3.account_id WHERE T1.gender = 'F' ORDER BY T3.amount DESC LIMIT 3",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT c.client_id\nFROM client c\nJOIN disp d ON c.client_id = d.client_id\nJOIN loan l ON d.account_id = l.account_id\nWHERE c.gender = 'F'\nORDER BY l.amount DESC\nLIMIT 3;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.35677601900010814,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT c.client_id\nFROM client c\nJOIN disp d ON c.client_id = d.client_id\nJOIN loan l ON d.account_id = l.account_id\nWHERE c.gender = 'F'\nORDER BY l.amount DESC\nLIMIT 3;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "Among all the lap records set on various circuits, what is the time for the fastest one?",
+      "db_id": "formula_1",
+      "gold_sql": "SELECT time FROM lapTimes ORDER BY (CASE WHEN INSTR(time, ':') <> INSTR(SUBSTR(time, INSTR(time, ':') + 1), ':') + INSTR(time, ':') THEN CAST(SUBSTR(time, 1, INSTR(time, ':') - 1) AS REAL) * 3600 ELSE 0 END) + (CAST(SUBSTR(time, INSTR(time, ':') - 2 * (INSTR(time, ':') = INSTR(SUBSTR(time, INSTR(time, ':') + 1), ':') + INSTR(time, ':')), INSTR(time, ':') - 1) AS REAL) * 60) + (CAST(SUBSTR(time, INSTR(time, ':') + 1, INSTR(time, '.') - INSTR(time, ':') - 1) AS REAL)) + (CAST(SUBSTR(time, INSTR(time, '.') + 1) AS REAL) / 1000) ASC LIMIT 1",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT MIN(milliseconds) AS fastest_lap_time\nFROM lapTimes;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.16225591900001746,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT MIN(milliseconds) AS fastest_lap_time\nFROM lapTimes;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "In superheroes with missing weight data, calculate the difference between the number of superheroes with blue eyes and no eye color.",
+      "db_id": "superhero",
+      "gold_sql": "SELECT SUM(CASE WHEN T2.id = 7 THEN 1 ELSE 0 END) - SUM(CASE WHEN T2.id = 1 THEN 1 ELSE 0 END) FROM superhero AS T1 INNER JOIN colour AS T2 ON T1.eye_colour_id = T2.id WHERE T1.weight_kg = 0 OR T1.weight_kg is NULL",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT \n  (SELECT COUNT(*) FROM superhero WHERE eye_colour_id = (SELECT id FROM colour WHERE colour = 'Blue') AND weight_kg IS NULL) - \n  (SELECT COUNT(*) FROM superhero WHERE eye_colour_id IS NULL AND weight_kg IS NULL) AS difference;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.35775321500000246,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT \n  (SELECT COUNT(*) FROM superhero WHERE eye_colour_id = (SELECT id FROM colour WHERE colour = 'Blue') AND weight_kg IS NULL) - \n  (SELECT COUNT(*) FROM superhero WHERE eye_colour_id IS NULL AND weight_kg IS NULL) AS difference;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "In the College of Agriculture and Applied Sciences, how many majors are under the department of School of Applied Sciences, Technology and Education?",
+      "db_id": "student_club",
+      "gold_sql": "SELECT COUNT(major_id) FROM major WHERE department = 'School of Applied Sciences, Technology and Education' AND college = 'College of Agriculture and Applied Sciences'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT COUNT(*) \nFROM \"major\" \nWHERE \"college\" = 'College of Agriculture and Applied Sciences' \n  AND \"department\" = 'School of Applied Sciences, Technology and Education';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.27734408700007407,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT COUNT(*) \nFROM \"major\" \nWHERE \"college\" = 'College of Agriculture and Applied Sciences' \n  AND \"department\" = 'School of Applied Sciences, Technology and Education';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "Mention the display name and location of the user who owned the excerpt post with hypothesis-testing tag.",
+      "db_id": "codebase_community",
+      "gold_sql": "SELECT T3.DisplayName, T3.Location FROM tags AS T1 INNER JOIN posts AS T2 ON T1.ExcerptPostId = T2.Id INNER JOIN users AS T3 ON T3.Id = T2.OwnerUserId WHERE T1.TagName = 'hypothesis-testing'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT u.\"DisplayName\", u.\"Location\"\nFROM \"users\" u\nJOIN \"posts\" p ON u.\"Id\" = p.\"OwnerUserId\"\nJOIN \"tags\" t ON p.\"Id\" = t.\"ExcerptPostId\"\nWHERE t.\"TagName\" = 'hypothesis-testing';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.4248378560000674,
+      "passed": true,
+      "per_iteration": [
+        {
+          "sql": "SELECT u.\"DisplayName\", u.\"Location\"\nFROM \"users\" u\nJOIN \"posts\" p ON u.\"Id\" = p.\"OwnerUserId\"\nJOIN \"tags\" t ON p.\"Id\" = t.\"ExcerptPostId\"\nWHERE t.\"TagName\" = 'hypothesis-testing';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "question": "List all patients who were followed up at the outpatient clinic who underwent a laboratory test in October 1991 and had a total blood bilirubin level within the normal range.",
+      "db_id": "thrombosis_prediction",
+      "gold_sql": "SELECT DISTINCT T1.ID FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.Admission = '-' AND T2.`T-BIL` < 2.0 AND T2.Date LIKE '1991-10-%'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT DISTINCT p.\"ID\", p.\"SEX\", p.\"Birthday\", p.\"Description\", p.\"First Date\", p.\"Admission\", p.\"Diagnosis\"\nFROM \"Patient\" p\nJOIN \"Laboratory\" l ON p.\"ID\" = l.\"ID\"\nWHERE p.\"Admission\" = 'outpatient clinic'\n  AND l.\"Date\" >= '1991-10-01'\n  AND l.\"Date\" < '1991-11-01'\n  AND l.\"T-BIL\" BETWEEN 0.2 AND 1.2;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 3,
+      "latency_seconds": 1.7911965400001009,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT DISTINCT p.\"ID\", p.\"SEX\", p.\"Birthday\", p.\"Description\", p.\"First Date\", p.\"Admission\", p.\"Diagnosis\"\nFROM \"Patient\" p\nJOIN \"Laboratory\" l ON p.\"ID\" = l.\"ID\"\nWHERE p.\"Admission\" = 'outpatient clinic'\n  AND l.\"Date\" >= '1991-10-01'\n  AND l.\"Date\" < '1991-11-01'\n  AND l.\"T-BIL\" BETWEEN 0.2 AND 1.2;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT DISTINCT p.\"ID\", p.\"SEX\", p.\"Birthday\", p.\"Description\", p.\"First Date\", p.\"Admission\", p.\"Diagnosis\"\nFROM \"Patient\" p\nJOIN \"Laboratory\" l ON p.\"ID\" = l.\"ID\"\nWHERE p.\"Admission\" = 'outpatient clinic'\n  AND l.\"Date\" >= '1991-10-01'\n  AND l.\"Date\" < '1991-11-01'\n  AND l.\"T-BIL\" BETWEEN 0.2 AND 1.2;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT DISTINCT p.\"ID\", p.\"SEX\", p.\"Birthday\", p.\"Description\", p.\"First Date\", p.\"Admission\", p.\"Diagnosis\"\nFROM \"Patient\" p\nJOIN \"Laboratory\" l ON p.\"ID\" = l.\"ID\"\nWHERE p.\"Admission\" = 'outpatient clinic'\n  AND l.\"Date\" >= '1991-10-01'\n  AND l.\"Date\" < '1991-11-01'\n  AND l.\"T-BIL\" BETWEEN 0.2 AND 1.2;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "Among the molecules with element Calcium, are they mostly carcinogenic or non carcinogenic?",
+      "db_id": "toxicology",
+      "gold_sql": "SELECT T2.label FROM atom AS T1 INNER JOIN molecule AS T2 ON T1.molecule_id = T2.molecule_id WHERE T1.element = 'ca' GROUP BY T2.label ORDER BY COUNT(T2.label) DESC LIMIT 1",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT \n  CASE \n    WHEN SUM(CASE WHEN m.label = 'carcinogenic' THEN 1 ELSE 0 END) > SUM(CASE WHEN m.label = 'non-carcinogenic' THEN 1 ELSE 0 END) THEN 'carcinogenic'\n    ELSE 'non-carcinogenic'\n  END AS result\nFROM molecule m\nJOIN atom a ON m.molecule_id = a.molecule_id\nWHERE a.element = 'Calcium';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.6237536280000313,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT \n  CASE \n    WHEN SUM(CASE WHEN m.label = 'carcinogenic' THEN 1 ELSE 0 END) > SUM(CASE WHEN m.label = 'non-carcinogenic' THEN 1 ELSE 0 END) THEN 'carcinogenic'\n    ELSE 'non-carcinogenic'\n  END AS result\nFROM molecule m\nJOIN atom a ON m.molecule_id = a.molecule_id\nWHERE a.element = 'Calcium';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "Please list the full names of the students in the Student_Club that come from the Art and Design Department.",
+      "db_id": "student_club",
+      "gold_sql": "SELECT T1.first_name, T1.last_name FROM member AS T1 INNER JOIN major AS T2 ON T1.link_to_major = T2.major_id WHERE T2.department = 'Art and Design Department'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT m.first_name || ' ' || m.last_name AS full_name\nFROM member m\nJOIN major maj ON m.link_to_major = maj.major_id\nWHERE maj.department = 'Art and Design';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 3,
+      "latency_seconds": 0.9438371090000146,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT m.first_name || ' ' || m.last_name AS full_name\nFROM member m\nJOIN major maj ON m.link_to_major = maj.major_id\nWHERE maj.department = 'Art and Design';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT m.first_name || ' ' || m.last_name AS full_name\nFROM member m\nJOIN major maj ON m.link_to_major = maj.major_id\nWHERE maj.department = 'Art and Design';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT m.first_name || ' ' || m.last_name AS full_name\nFROM member m\nJOIN major maj ON m.link_to_major = maj.major_id\nWHERE maj.department = 'Art and Design';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "List all the mythic rarity print cards banned in gladiator format.",
+      "db_id": "card_games",
+      "gold_sql": "SELECT DISTINCT T1.id FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.format = 'gladiator' AND T2.status = 'Banned' AND T1.rarity = 'mythic'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT c.\"name\"\nFROM \"cards\" c\nJOIN \"legalities\" l ON c.\"uuid\" = l.\"uuid\"\nWHERE c.\"rarity\" = 'mythic'\n  AND l.\"format\" = 'gladiator'\n  AND l.\"status\" = 'banned'\n  AND c.\"isNonFoil\" = 1;",
+      "agent_ok": false,
+      "agent_error": "OperationalError: no such column: c.isNonFoil",
+      "iterations": 3,
+      "latency_seconds": 1.356247779000114,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT c.\"name\"\nFROM \"cards\" c\nJOIN \"legalities\" l ON c.\"uuid\" = l.\"uuid\"\nWHERE c.\"rarity\" = 'mythic'\n  AND l.\"format\" = 'gladiator'\n  AND l.\"status\" = 'banned';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT c.\"name\"\nFROM \"cards\" c\nJOIN \"legalities\" l ON c.\"uuid\" = l.\"uuid\"\nWHERE c.\"rarity\" = 'mythic'\n  AND l.\"format\" = 'gladiator'\n  AND l.\"status\" = 'banned';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT c.\"name\"\nFROM \"cards\" c\nJOIN \"legalities\" l ON c.\"uuid\" = l.\"uuid\"\nWHERE c.\"rarity\" = 'mythic'\n  AND l.\"format\" = 'gladiator'\n  AND l.\"status\" = 'banned'\n  AND c.\"isNonFoil\" = 1;",
+          "execution_ok": false,
+          "execution_error": "OperationalError: no such column: c.isNonFoil",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "Among posts by Harvey Motulsky and Noah Snyder, which one has higher popularity?",
+      "db_id": "codebase_community",
+      "gold_sql": "SELECT T1.DisplayName FROM users AS T1 INNER JOIN postHistory AS T2 ON T1.Id = T2.UserId INNER JOIN posts AS T3 ON T2.PostId = T3.Id WHERE T1.DisplayName = 'Harvey Motulsky' OR T1.DisplayName = 'Noah Snyder' GROUP BY T1.DisplayName ORDER BY SUM(T3.ViewCount) DESC LIMIT 1",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT p.Title\nFROM posts p\nJOIN users u ON p.OwnerUserId = u.Id\nWHERE u.DisplayName IN ('Harvey Motulsky', 'Noah Snyder')\nORDER BY p.Score DESC, p.ViewCount DESC\nLIMIT 1;",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 1,
+      "latency_seconds": 0.43850070200005575,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT p.Title\nFROM posts p\nJOIN users u ON p.OwnerUserId = u.Id\nWHERE u.DisplayName IN ('Harvey Motulsky', 'Noah Snyder')\nORDER BY p.Score DESC, p.ViewCount DESC\nLIMIT 1;",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "question": "Mention the reputation of users who had obtained the badge on 7/19/2010 7:39:08 PM.",
+      "db_id": "codebase_community",
+      "gold_sql": "SELECT T1.Reputation FROM users AS T1 INNER JOIN badges AS T2 ON T1.Id = T2.UserId WHERE T2.Date = '2010-07-19 19:39:08.0'",
+      "gold_ok": true,
+      "gold_error": null,
+      "predicted_sql": "SELECT u.Reputation\nFROM users u\nJOIN badges b ON u.Id = b.UserId\nWHERE b.Date = '2010-07-19 19:39:08';",
+      "agent_ok": true,
+      "agent_error": null,
+      "iterations": 3,
+      "latency_seconds": 0.9639796520000345,
+      "passed": false,
+      "per_iteration": [
+        {
+          "sql": "SELECT u.Reputation\nFROM users u\nJOIN badges b ON u.Id = b.UserId\nWHERE b.Date = '2010-07-19 19:39:08';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT u.Reputation\nFROM users u\nJOIN badges b ON u.Id = b.UserId\nWHERE b.Date = '2010-07-19 19:39:08';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        },
+        {
+          "sql": "SELECT u.Reputation\nFROM users u\nJOIN badges b ON u.Id = b.UserId\nWHERE b.Date = '2010-07-19 19:39:08';",
+          "execution_ok": true,
+          "execution_error": null,
+          "passed": false
+        }
+      ]
+    }
+  ]
+}

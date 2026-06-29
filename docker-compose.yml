@@ -57,7 +57,11 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Anonymous viewer enabled so the headless screenshot pipeline can
+      # render the dashboard without juggling Grafana auth cookies.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_NAME: Main Org.
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
     volumes:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana-data:/var/lib/grafana
@@ -159,8 +163,15 @@ services:
       <<: *langfuse-env
       NEXTAUTH_URL: http://localhost:3001
       NEXTAUTH_SECRET: course-nextauth-not-for-prod
+      LANGFUSE_INIT_ORG_ID: course-org
       LANGFUSE_INIT_ORG_NAME: Course
+      LANGFUSE_INIT_PROJECT_ID: course-project
       LANGFUSE_INIT_PROJECT_NAME: Default
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-mlops-hw-2026
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-mlops-hw-2026-secret-deterministic-do-not-rotate
+      LANGFUSE_INIT_USER_EMAIL: artem@anna.money
+      LANGFUSE_INIT_USER_NAME: Artem
+      LANGFUSE_INIT_USER_PASSWORD: course-langfuse-admin-pw
 
 volumes:
   prometheus-data:
